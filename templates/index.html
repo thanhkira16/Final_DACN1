@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Churn Prediction App</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f7f8;
+            color: #333;
+            padding: 20px;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+            margin: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #4a90e2;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px;
+            width: 48%;
+            border: none;
+            background-color: #4a90e2;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #357ABD;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 700px;
+            max-height: 80vh;
+            margin: 5% auto;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            overflow-y: auto;
+        }
+        .close {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            margin-top: -20px;
+            color: #999;
+        }
+        .close:hover {
+            color: #333;
+        }
+        .prediction-result {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .churn {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 2px solid #ef5350;
+        }
+        .no-churn {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border: 2px solid #66bb6a;
+        }
+        .model-selector {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .model-selector label {
+            margin-bottom: 8px;
+            color: #555;
+        }
+        .model-selector select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .predict-button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 15px;
+            background: linear-gradient(45deg, #4a90e2, #357ABD);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .predict-button:hover {
+            background: linear-gradient(45deg, #357ABD, #2968a3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .predict-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .loading {
+            display: none;
+            margin: 10px 0;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4a90e2;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Analysis section styles */
+        .analysis-section {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #4a90e2;
+            text-align: left;
+        }
+        .analysis-section h4 {
+            color: #4a90e2;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .analysis-content {
+            line-height: 1.6;
+            font-size: 14px;
+            color: #555;
+            white-space: pre-wrap;
+        }
+        .analysis-loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+            color: #666;
+            font-style: italic;
+        }
+        .analysis-error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ffcdd2;
+        }
+    </style>
+</head>
+<body>
+    <h2>Customer Churn Prediction</h2>
+
+    <form method="POST" id="mainForm">
+        {% for feature in feature_names %}
+            {% if feature == "CLIENT_GENDER" %}
+                <label>{{ feature }}:</label>
+                <select name="{{ feature }}">
+                    <option value="0" {% if input_data[feature] == 0 %}selected{% endif %}>F</option>
+                    <option value="1" {% if input_data[feature] == 1 %}selected{% endif %}>M</option>
+                </select>
+            {% elif feature == "STAFF_VIB" %}
+                <label>{{ feature }}:</label>
+                <select name="{{ feature }}">
+                    <option value="0" {% if input_data[feature] == 0 %}selected{% endif %}>N</option>
+                    <option value="1" {% if input_data[feature] == 1 %}selected{% endif %}>Y</option>
+                </select>
+            {% elif feature == "SMS" %}
+                <label>{{ feature }}:</label>
+                <select name="{{ feature }}">
+                    <option value="0" {% if input_data[feature] == 0 %}selected{% endif %}>N</option>
+                    <option value="1" {% if input_data[feature] == 1 %}selected{% endif %}>Y</option>
+                    <option value="2" {% if input_data[feature] == 2 %}selected{% endif %}>UNKNOWN</option>
+                </select>
+            {% elif feature == "EB_REGISTER_CHANNEL" %}
+                <label>{{ feature }}:</label>
+                <select name="{{ feature }}">
+                    <option value="0" {% if input_data[feature] == 0 %}selected{% endif %}>BRANCH</option>
+                    <option value="1" {% if input_data[feature] == 1 %}selected{% endif %}>MYVIB</option>
+                    <option value="2" {% if input_data[feature] == 2 %}selected{% endif %}>AUTO-JOB</option>
+                    <option value="3" {% if input_data[feature] == 3 %}selected{% endif %}>WEBSITE</option>
+                    <option value="4" {% if input_data[feature] == 4 %}selected{% endif %}>UNKNOWN</option>
+                </select>
+            {% elif feature == "VERIFY_METHOD" %}
+                <label>{{ feature }}:</label>
+                <select name="{{ feature }}">
+                    <option value="0" {% if input_data[feature] == 0 %}selected{% endif %}>SMS</option>
+                    <option value="1" {% if input_data[feature] == 1 %}selected{% endif %}>SMART_OTP</option>
+                    <option value="2" {% if input_data[feature] == 2 %}selected{% endif %}>HARD_TOKEN</option>
+                    <option value="3" {% if input_data[feature] == 3 %}selected{% endif %}>UNKNOWN</option>
+                </select>
+            {% else %}
+                <label>{{ feature }}:</label>
+                <input type="text" name="{{ feature }}" value="{{ input_data[feature] }}">
+            {% endif %}
+            <br>
+        {% endfor %}
+
+        <label>Select Model:</label>
+        <select name="model" id="mainModelSelect">
+            {% for model_name in ['KNN', 'RandomForest', 'XGBoost', 'HistGradientBoosting'] %}
+                <option value="{{ model_name }}" {% if model_name == selected_model %}selected{% endif %}>{{ model_name }}</option>
+            {% endfor %}
+        </select>
+
+        <div class="button-group">
+            <button type="submit">Predict</button>
+            <button type="button" name="random" value="true" onclick="submitWithRandom()">Random Input</button>
+        </div>
+    </form>
+
+    <!-- Enhanced Modal Popup -->
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Prediction Result & Analysis</h3>
+
+            <div id="predictionResult" class="prediction-result">
+                <!-- Kết quả sẽ được cập nhật bằng JavaScript -->
+            </div>
+
+            <!-- ChatGPT Analysis Section -->
+            <div class="analysis-section">
+                <h4>🤖 AI Customer Activity Analysis</h4>
+                <div class="analysis-loading" id="analysisLoading">
+                    <div class="spinner" style="width: 20px; height: 20px;"></div>
+                    <p>Analyzing customer behavior...</p>
+                </div>
+                <div class="analysis-content" id="analysisContent">
+                    <!-- Analysis content will be inserted here -->
+                </div>
+            </div>
+
+            <div class="model-selector">
+                <label for="modalModelSelect">Try Different Model:</label>
+                <select id="modalModelSelect">
+                    {% for model_name in ['KNN', 'RandomForest', 'XGBoost', 'HistGradientBoosting'] %}
+                        <option value="{{ model_name }}">{{ model_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="loading" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>Predicting...</p>
+            </div>
+
+            <button class="predict-button" onclick="predictWithNewModel()" id="predictBtn">
+                Predict with Selected Model
+            </button>
+
+            <div style="margin-top: 20px;">
+                <button style="background: #6c757d; width: 30%;" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFormData = {};
+        let currentPrediction = null;
+        let currentAnalysis = null;
+
+        function showPredictionResult(prediction, model) {
+            const resultDiv = document.getElementById('predictionResult');
+            const isChurn = prediction === 1;
+
+            resultDiv.className = `prediction-result ${isChurn ? 'churn' : 'no-churn'}`;
+            resultDiv.innerHTML = `
+                <div style="font-size: 18px; margin-bottom: 10px;">Model: ${model}</div>
+                <div>${isChurn ? '⚠️ CHURN RISK' : '✅ NO CHURN'}</div>
+                <div style="font-size: 16px; margin-top: 10px;">
+                    Result: ${isChurn ? 'Customer likely to churn' : 'Customer likely to stay'}
+                </div>
+            `;
+        }
+
+        function showAnalysis(analysis) {
+            const analysisContent = document.getElementById('analysisContent');
+            const analysisLoading = document.getElementById('analysisLoading');
+
+            analysisLoading.style.display = 'none';
+
+            if (analysis && !analysis.startsWith('Error analyzing with ChatGPT')) {
+                analysisContent.innerHTML = analysis;
+                analysisContent.className = 'analysis-content';
+            } else {
+                analysisContent.innerHTML = analysis || 'Analysis not available';
+                analysisContent.className = 'analysis-content analysis-error';
+            }
+        }
+
+        async function predictWithNewModel() {
+            const selectedModel = document.getElementById('modalModelSelect').value;
+            const predictBtn = document.getElementById('predictBtn');
+            const loading = document.getElementById('loadingSpinner');
+            const analysisLoading = document.getElementById('analysisLoading');
+            const analysisContent = document.getElementById('analysisContent');
+
+            // Disable button và hiện loading
+            predictBtn.disabled = true;
+            loading.style.display = 'block';
+            analysisLoading.style.display = 'block';
+            analysisContent.innerHTML = '';
+
+            try {
+                // Gọi API prediction với model mới
+                const response = await fetch('/predict_ajax', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ...currentFormData,
+                        model: selectedModel
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const result = await response.json();
+
+                // Cập nhật kết quả
+                showPredictionResult(result.prediction, selectedModel);
+                showAnalysis(result.analysis);
+                currentPrediction = result.prediction;
+                currentAnalysis = result.analysis;
+
+            } catch (error) {
+                alert('Error occurred during prediction: ' + error.message);
+                analysisLoading.style.display = 'none';
+                analysisContent.innerHTML = 'Error occurred while analyzing data.';
+                analysisContent.className = 'analysis-content analysis-error';
+            } finally {
+                // Enable button và ẩn loading
+                predictBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        function submitWithRandom() {
+            // Tạo form data với random flag
+            const form = document.getElementById('mainForm');
+            const randomInput = document.createElement('input');
+            randomInput.type = 'hidden';
+            randomInput.name = 'random';
+            randomInput.value = 'true';
+            form.appendChild(randomInput);
+            form.submit();
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+        }
+
+        // Xử lý submit form chính
+        document.getElementById('mainForm').addEventListener('submit', function(e) {
+            // Nếu không phải random submit, lưu form data cho modal
+            if (!e.submitter || e.submitter.name !== 'random') {
+                const formData = new FormData(this);
+                currentFormData = {};
+
+                // Chuyển FormData thành object
+                for (let [key, value] of formData.entries()) {
+                    if (key !== 'model') {
+                        currentFormData[key] = parseFloat(value) || 0;
+                    }
+                }
+            }
+        });
+
+        // Hiển thị modal nếu có prediction từ server
+        {% if prediction is not none %}
+        window.onload = function() {
+            // Lưu current form data từ server
+            currentFormData = {{ input_data | tojson }};
+            currentPrediction = {{ prediction }};
+            currentAnalysis = {{ analysis | tojson }};
+
+            // Set modal model selector to current model
+            document.getElementById('modalModelSelect').value = '{{ selected_model }}';
+
+            // Show result
+            showPredictionResult({{ prediction }}, '{{ selected_model }}');
+
+            // Show analysis
+            {% if analysis %}
+                showAnalysis({{ analysis | tojson }});
+            {% else %}
+                document.getElementById('analysisLoading').style.display = 'none';
+                document.getElementById('analysisContent').innerHTML = 'No analysis available';
+            {% endif %}
+
+            // Show modal
+            document.getElementById('resultModal').style.display = 'block';
+        }
+        {% endif %}
+
+        // Đóng modal khi click outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('resultModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
