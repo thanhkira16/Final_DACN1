@@ -48,7 +48,7 @@ def analyze_with_chatgpt(input_data):
     prompt = (
         "Phân tích dữ liệu đầu vào sau đây của một người dùng ứng dụng ngân hàng số. "
         "Đưa ra đánh giá bằng tiếng Việt về trạng thái hoạt động của người dùng này (ví dụ: đang hoạt động, không hoạt động, có nguy cơ rời bỏ), "
-        "kèm theo giải thích ngắn gọn. "
+        "kèm theo giải thích ngắn gọn dưới 200 từ. "
         "Dữ liệu: " + str(input_data)
     )
     try:
