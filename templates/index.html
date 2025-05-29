@@ -53,6 +53,47 @@
             justify-content: space-between;
         }
 
+        /* Data stats section */
+        .data-stats {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2196f3;
+        }
+        .data-stats h4 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+            font-size: 14px;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        .stats-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .stats-value {
+            color: #333;
+        }
+        .reload-btn {
+            width: 100%;
+            padding: 8px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .reload-btn:hover {
+            background-color: #1976d2;
+        }
+
         /* Dataset selection buttons */
         .dataset-selection {
             margin: 15px 0;
@@ -86,6 +127,10 @@
         }
         .no-churn-btn:hover {
             background-color: #218838;
+        }
+        .dataset-btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
         }
 
         /* Modal styles */
@@ -208,8 +253,8 @@
         }
         .analysis-content {
             line-height: 1.6;
-            max-high: 450px;
-            min-high: 350px;
+            max-height: 450px;
+            min-height: 350px;
             font-size: 14px;
             color: #555;
             white-space: pre-wrap;
@@ -228,52 +273,76 @@
             border-radius: 4px;
             border: 1px solid #ffcdd2;
         }
+
+        /* Success message */
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+            text-align: center;
+        }
+
+        /* Customer info display */
+        .customer-info {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #ffeaa7;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        /* Error message */
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <h2>Customer Churn Prediction</h2>
 
     <form method="POST" id="mainForm">
+<!--        &lt;!&ndash; Data Statistics Section &ndash;&gt;-->
+<!--        {% if data_stats %}-->
+<!--        <div class="data-stats">-->
+<!--            <h4>📊 Dataset Information</h4>-->
+<!--            <div class="stats-row">-->
+<!--                <span class="stats-label">CHURN Users:</span>-->
+<!--                <span class="stats-value" id="churnCount">{{ data_stats.total_churn }}</span>-->
+<!--            </div>-->
+<!--            <div class="stats-row">-->
+<!--                <span class="stats-label">NO_CHURN Users:</span>-->
+<!--                <span class="stats-value" id="noChurnCount">{{ data_stats.total_no_churn }}</span>-->
+<!--            </div>-->
+<!--            <div class="stats-row">-->
+<!--                <span class="stats-label">Total Users:</span>-->
+<!--                <span class="stats-value" id="totalCount">{{ data_stats.total_churn + data_stats.total_no_churn }}</span>-->
+<!--            </div>-->
+<!--            <button type="button" class="reload-btn" onclick="reloadData()">🔄 Reload Data from CSV</button>-->
+<!--        </div>-->
+<!--        {% endif %}-->
+
         {% for feature in feature_names %}
             {% if feature == "CLIENT_GENDER" %}
                 <label>{{ feature }}:</label>
-                <select name="{{ feature }}">
+                <select name="{{ feature }}" id="input_{{ feature }}">
                     <option value="0" {% if input_data[feature] == 0 %}selected{% endif %}>F</option>
                     <option value="1" {% if input_data[feature] == 1 %}selected{% endif %}>M</option>
                 </select>
-            {% elif feature == "STAFF_VIB" %}
-                <label>{{ feature }}:</label>
-                <select name="{{ feature }}">
-                    <option value="0" {% if input_data[feature] == 0 %}selected{% endif %}>N</option>
-                    <option value="1" {% if input_data[feature] == 1 %}selected{% endif %}>Y</option>
-                </select>
-            {% elif feature == "SMS" %}
-                <label>{{ feature }}:</label>
-                <select name="{{ feature }}">
-                    <option value="0" {% if input_data[feature] == 0 %}selected{% endif %}>N</option>
-                    <option value="1" {% if input_data[feature] == 1 %}selected{% endif %}>Y</option>
-                    <option value="2" {% if input_data[feature] == 2 %}selected{% endif %}>UNKNOWN</option>
-                </select>
-            {% elif feature == "EB_REGISTER_CHANNEL" %}
-                <label>{{ feature }}:</label>
-                <select name="{{ feature }}">
-                    <option value="0" {% if input_data[feature] == 0 %}selected{% endif %}>BRANCH</option>
-                    <option value="1" {% if input_data[feature] == 1 %}selected{% endif %}>MYVIB</option>
-                    <option value="2" {% if input_data[feature] == 2 %}selected{% endif %}>AUTO-JOB</option>
-                    <option value="3" {% if input_data[feature] == 3 %}selected{% endif %}>WEBSITE</option>
-                    <option value="4" {% if input_data[feature] == 4 %}selected{% endif %}>UNKNOWN</option>
-                </select>
-            {% elif feature == "VERIFY_METHOD" %}
-                <label>{{ feature }}:</label>
-                <select name="{{ feature }}">
-                    <option value="0" {% if input_data[feature] == 0 %}selected{% endif %}>SMS</option>
-                    <option value="1" {% if input_data[feature] == 1 %}selected{% endif %}>SMART_OTP</option>
-                    <option value="2" {% if input_data[feature] == 2 %}selected{% endif %}>HARD_TOKEN</option>
-                    <option value="3" {% if input_data[feature] == 3 %}selected{% endif %}>UNKNOWN</option>
-                </select>
             {% else %}
                 <label>{{ feature }}:</label>
-                <input type="text" name="{{ feature }}" value="{{ input_data[feature] }}">
+                <input type="text" name="{{ feature }}" id="input_{{ feature }}" value="{{ input_data[feature] }}" step="any">
             {% endif %}
             <br>
         {% endfor %}
@@ -292,15 +361,16 @@
 
         <!-- Dataset selection section -->
         <div class="dataset-selection">
-            <h4>Load Test Data:</h4>
+            <h4>Load Real User Data:</h4>
             <div class="button-group">
-                <button type="button" class="dataset-btn churn-btn" onclick="loadChurnData()">
+                <button type="button" class="dataset-btn churn-btn" onclick="loadChurnData()" id="churnBtn">
                     Load CHURN User
                 </button>
-                <button type="button" class="dataset-btn no-churn-btn" onclick="loadNoChurnData()">
+                <button type="button" class="dataset-btn no-churn-btn" onclick="loadNoChurnData()" id="noChurnBtn">
                     Load NO_CHURN User
                 </button>
             </div>
+            <div id="loadMessage" style="margin-top: 10px;"></div>
         </div>
 
         <div style="margin-top: 10px; text-align: center;">
@@ -315,7 +385,7 @@
             <h3>Prediction Result & Analysis</h3>
 
             <div id="predictionResult" class="prediction-result">
-                <!-- Kết quả sẽ được cập nhật bằng JavaScript -->
+                <!-- Results will be updated by JavaScript -->
             </div>
 
             <!-- ChatGPT Analysis Section -->
@@ -359,259 +429,303 @@
         let currentPrediction = null;
         let currentAnalysis = null;
 
-        async function loadChurnData() {
-            await loadTestData('CHURN');
-        }
+        // Feature names array (should match Flask app)
+        const featureNames = [
+            "CLIENT_GENDER", "AGE", "TENURE", "TOTAL_CREDIT_CARD", "TOTAL_DEBIT_CARD",
+            "TOTAL_TERM_DEPOSIT", "AVG_TERM_DEPOSIT_BALANCE", "MAX_TERM_DEPOSIT_BALANCE",
+            "TOTAL_LOANS", "AVG_LOAN_BALANCE", "TOTAL_ACTIVITIES", "TOTAL_TRANSACTIONS",
+            "TOTAL_TYPE_TRANSACTIONS", "AVG_TRANSACTIONS_NO_MONTH", "AVG_TRANSACTIONS_AMOUNT"
+        ];
 
-        async function loadNoChurnData() {
-            await loadTestData('NO_CHURN');
-        }
+        function showMessage(message, isSuccess = true) {
+            const messageDiv = document.getElementById('loadMessage');
+            messageDiv.className = isSuccess ? 'success-message' : 'error-message';
+            messageDiv.innerHTML = message;
+            messageDiv.style.display = 'block';
 
-        async function loadTestData(datasetType) {
-            try {
-                const response = await fetch('/load_test_data', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        dataset_type: datasetType
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const result = await response.json();
-
-                if (result.success) {
-                    fillFormWithData(result.data);
-                    alert(result.message);
-                } else {
-                    alert('Error: ' + result.message);
-                }
-
-            } catch (error) {
-                alert('Error loading test data: ' + error.message);
-            }
-        }
-
-        function fillFormWithData(userData) {
-            // Fill form inputs directly using the feature names
-            for (const [fieldName, value] of Object.entries(userData)) {
-                const formElement = document.querySelector(`[name="${fieldName}"]`);
-                if (formElement) {
-                    if (formElement.tagName === 'SELECT') {
-                        formElement.value = value;
-                    } else {
-                        formElement.value = value;
-                    }
-                }
-            }
-        }
-
-        function showPredictionResult(prediction, model) {
-            const resultDiv = document.getElementById('predictionResult');
-            const isChurn = prediction === 1;
-
-            resultDiv.className = `prediction-result ${isChurn ? 'churn' : 'no-churn'}`;
-            resultDiv.innerHTML = `
-                <div style="font-size: 18px; margin-bottom: 10px;">Model: ${model}</div>
-                <div>${isChurn ? '⚠️ CHURN RISK' : '✅ NO CHURN'}</div>
-                <div style="font-size: 16px; margin-top: 10px;">
-                    Result: ${isChurn ? 'Customer likely to churn' : 'Customer likely to stay'}
-                </div>
-            `;
-        }
-
-        function showAnalysis(analysis) {
-            const analysisContent = document.getElementById('analysisContent');
-            const analysisLoading = document.getElementById('analysisLoading');
-
-            analysisLoading.style.display = 'none';
-
-            if (analysis && !analysis.startsWith('Error analyzing with ChatGPT')) {
-                analysisContent.innerHTML = analysis;
-                analysisContent.className = 'analysis-content';
-            } else {
-                analysisContent.innerHTML = analysis || 'Analysis not available';
-                analysisContent.className = 'analysis-content analysis-error';
-            }
-        }
-
-        async function predictWithNewModel() {
-            const selectedModel = document.getElementById('modalModelSelect').value;
-            const predictBtn = document.getElementById('predictBtn');
-            const loading = document.getElementById('loadingSpinner');
-            const analysisLoading = document.getElementById('analysisLoading');
-            const analysisContent = document.getElementById('analysisContent');
-
-            // Disable button và hiện loading
-            predictBtn.disabled = true;
-            loading.style.display = 'block';
-            analysisLoading.style.display = 'block';
-            analysisContent.innerHTML = '';
-
-            try {
-                // Gọi API prediction với model mới
-                const response = await fetch('/predict_ajax', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        ...currentFormData,
-                        model: selectedModel
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const result = await response.json();
-
-                // Cập nhật kết quả
-                showPredictionResult(result.prediction, selectedModel);
-                showAnalysis(result.analysis);
-                currentPrediction = result.prediction;
-                currentAnalysis = result.analysis;
-
-            } catch (error) {
-                alert('Error occurred during prediction: ' + error.message);
-                analysisLoading.style.display = 'none';
-                analysisContent.innerHTML = 'Error occurred while analyzing data.';
-                analysisContent.className = 'analysis-content analysis-error';
-            } finally {
-                // Enable button và ẩn loading
-                predictBtn.disabled = false;
-                loading.style.display = 'none';
-            }
-        }
-
-        function generateRandomFloat(min = 0, max = 100, decimals = 2) {
-            const random = Math.random() * (max - min) + min;
-            return parseFloat(random.toFixed(decimals));
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
         }
 
         function randomizeInputs() {
-            // Get all text inputs (excluding select elements)
-            const textInputs = document.querySelectorAll('input[type="text"]');
-
-            textInputs.forEach(input => {
-                const fieldName = input.name;
-                let randomValue;
-
-                // Customize random ranges based on field names
-                switch(fieldName) {
-                    case 'TOTAL_ACTIVITIES':
-                        randomValue = generateRandomFloat(0, 500, 0);
-                        break;
-                    case 'TOTAL_TRANSACTIONS':
-                        randomValue = generateRandomFloat(0, 200, 0);
-                        break;
-                    case 'TOTAL_TRANSACTIONS_AMOUNT':
-                        randomValue = generateRandomFloat(0, 1000000, 2);
-                        break;
-                    case 'TOTAL_CREDIT_CARD':
-                        randomValue = generateRandomFloat(0, 10, 0);
-                        break;
-                    case 'TOTAL_DEBIT_CARD':
-                        randomValue = generateRandomFloat(0, 10, 0);
-                        break;
-                    case 'AVG_TRANSACTION_AMOUNT':
-                        randomValue = generateRandomFloat(0, 50000, 2);
-                        break;
-                    case 'ACCOUNT_AGE_DAYS':
-                        randomValue = generateRandomFloat(30, 3650, 0);
-                        break;
-                    case 'LAST_ACTIVITY_DAYS':
-                        randomValue = generateRandomFloat(0, 365, 0);
-                        break;
-                    case 'BALANCE':
-                        randomValue = generateRandomFloat(0, 500000, 2);
-                        break;
-                    case 'CLIENT_AGE':
-                        randomValue = generateRandomFloat(18, 80, 0);
-                        break;
-                    default:
-                        // Default random range for unknown fields
-                        randomValue = generateRandomFloat(0, 100, 2);
+            // Generate random values for all inputs
+            featureNames.forEach(feature => {
+                const input = document.getElementById('input_' + feature);
+                if (input) {
+                    if (feature === "CLIENT_GENDER") {
+                        input.value = Math.random() > 0.5 ? "1" : "0";
+                    } else if (feature === "AGE") {
+                        input.value = Math.floor(Math.random() * (80 - 18 + 1)) + 18;
+                    } else if (feature === "TENURE") {
+                        input.value = Math.floor(Math.random() * 120) + 1;
+                    } else if (feature.includes("TOTAL_")) {
+                        input.value = Math.floor(Math.random() * 50);
+                    } else if (feature.includes("AVG_")) {
+                        input.value = (Math.random() * 100000).toFixed(2);
+                    } else if (feature.includes("MAX_")) {
+                        input.value = (Math.random() * 500000).toFixed(2);
+                    } else {
+                        input.value = (Math.random() * 100).toFixed(2);
+                    }
                 }
+            });
+            showMessage("Random values generated successfully!", true);
+        }
 
-                input.value = randomValue;
+        function loadChurnData() {
+            loadTestData('CHURN');
+        }
+
+        function loadNoChurnData() {
+            loadTestData('NO_CHURN');
+        }
+
+        function loadTestData(datasetType) {
+            // Disable buttons while loading
+            document.getElementById('churnBtn').disabled = true;
+            document.getElementById('noChurnBtn').disabled = true;
+
+            showMessage(`Loading ${datasetType} user data...`, true);
+
+            fetch('/load_test_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    dataset_type: datasetType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Fill form with loaded data
+                    featureNames.forEach(feature => {
+                        const input = document.getElementById('input_' + feature);
+                        if (input && data.data[feature] !== undefined) {
+                            input.value = data.data[feature];
+                        }
+                    });
+
+                    showMessage(data.message, true);
+                } else {
+                    showMessage(data.message, false);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Error loading data: ' + error.message, false);
+            })
+            .finally(() => {
+                // Re-enable buttons
+                document.getElementById('churnBtn').disabled = false;
+                document.getElementById('noChurnBtn').disabled = false;
+            });
+        }
+
+        function reloadData() {
+            const reloadBtn = document.querySelector('.reload-btn');
+            const originalText = reloadBtn.innerHTML;
+            reloadBtn.innerHTML = '🔄 Loading...';
+            reloadBtn.disabled = true;
+
+            fetch('/reload_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update stats display
+                    document.getElementById('churnCount').textContent = data.stats.total_churn;
+                    document.getElementById('noChurnCount').textContent = data.stats.total_no_churn;
+                    document.getElementById('totalCount').textContent = data.stats.total_churn + data.stats.total_no_churn;
+
+                    showMessage(data.message, true);
+                } else {
+                    showMessage(data.message, false);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Error reloading data: ' + error.message, false);
+            })
+            .finally(() => {
+                reloadBtn.innerHTML = originalText;
+                reloadBtn.disabled = false;
             });
         }
 
         function submitWithRandom() {
-            // Randomize inputs first
+            // First randomize inputs
             randomizeInputs();
 
-            // Then submit the form
-            const form = document.getElementById('mainForm');
-            const randomInput = document.createElement('input');
-            randomInput.type = 'hidden';
-            randomInput.name = 'random';
-            randomInput.value = 'true';
-            form.appendChild(randomInput);
-            form.submit();
+            // Wait a bit for the randomization to complete, then submit
+            setTimeout(() => {
+                document.getElementById('mainForm').submit();
+            }, 500);
+        }
+
+        // Form submission handling for prediction
+        document.getElementById('mainForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Collect form data
+            const formData = new FormData(this);
+            const data = {};
+
+            featureNames.forEach(feature => {
+                const value = formData.get(feature);
+                data[feature] = value ? parseFloat(value) : 0.0;
+            });
+
+            data.model = formData.get('model') || 'RandomForest';
+
+            // Store current form data
+            currentFormData = data;
+
+            // Make prediction
+            makePrediction(data);
+        });
+
+        function makePrediction(data) {
+            // Show loading in modal
+            showModal();
+            showLoading(true);
+
+            fetch('/predict_ajax', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                currentPrediction = result.prediction;
+                currentAnalysis = result.analysis;
+
+                // Update modal with results
+                updatePredictionResult(result.prediction);
+                updateAnalysisContent(result.analysis);
+
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                updatePredictionResult(null, error.message);
+                updateAnalysisContent('Error: ' + error.message);
+            })
+            .finally(() => {
+                showLoading(false);
+            });
+        }
+
+        function predictWithNewModel() {
+            const selectedModel = document.getElementById('modalModelSelect').value;
+            const data = {...currentFormData, model: selectedModel};
+
+            showLoading(true);
+
+            fetch('/predict_ajax', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                currentPrediction = result.prediction;
+                currentAnalysis = result.analysis;
+
+                updatePredictionResult(result.prediction);
+                updateAnalysisContent(result.analysis);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                updatePredictionResult(null, error.message);
+                updateAnalysisContent('Error: ' + error.message);
+            })
+            .finally(() => {
+                showLoading(false);
+            });
+        }
+
+        function showModal() {
+            document.getElementById('resultModal').style.display = 'block';
         }
 
         function closeModal() {
             document.getElementById('resultModal').style.display = 'none';
         }
 
-        // Xử lý submit form chính
-        document.getElementById('mainForm').addEventListener('submit', function(e) {
-            // Nếu không phải random submit, lưu form data cho modal
-            if (!e.submitter || e.submitter.name !== 'random') {
-                const formData = new FormData(this);
-                currentFormData = {};
-
-                // Chuyển FormData thành object
-                for (let [key, value] of formData.entries()) {
-                    if (key !== 'model') {
-                        currentFormData[key] = parseFloat(value) || 0;
-                    }
-                }
-            }
-        });
-
-        // Hiển thị modal nếu có prediction từ server
-        {% if prediction is not none %}
-        window.onload = function() {
-            // Lưu current form data từ server
-            currentFormData = {{ input_data | tojson }};
-            currentPrediction = {{ prediction }};
-            currentAnalysis = {{ analysis | tojson }};
-
-            // Set modal model selector to current model
-            document.getElementById('modalModelSelect').value = '{{ selected_model }}';
-
-            // Show result
-            showPredictionResult({{ prediction }}, '{{ selected_model }}');
-
-            // Show analysis
-            {% if analysis %}
-                showAnalysis({{ analysis | tojson }});
-            {% else %}
-                document.getElementById('analysisLoading').style.display = 'none';
-                document.getElementById('analysisContent').innerHTML = 'No analysis available';
-            {% endif %}
-
-            // Show modal
-            document.getElementById('resultModal').style.display = 'block';
+        function showLoading(show) {
+            document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
+            document.getElementById('analysisLoading').style.display = show ? 'block' : 'none';
+            document.getElementById('predictBtn').disabled = show;
         }
-        {% endif %}
 
-        // Đóng modal khi click outside
+        function updatePredictionResult(prediction, errorMessage = null) {
+            const resultDiv = document.getElementById('predictionResult');
+
+            if (errorMessage) {
+                resultDiv.innerHTML = `<div class="analysis-error">Error: ${errorMessage}</div>`;
+                return;
+            }
+
+            if (prediction === 1) {
+                resultDiv.className = 'prediction-result churn';
+                resultDiv.innerHTML = '⚠️ CHURN RISK<br><small>Customer likely to leave</small>';
+            } else {
+                resultDiv.className = 'prediction-result no-churn';
+                resultDiv.innerHTML = '✅ ACTIVE CUSTOMER<br><small>Customer likely to stay</small>';
+            }
+        }
+
+        function updateAnalysisContent(content) {
+            const analysisDiv = document.getElementById('analysisContent');
+            analysisDiv.innerHTML = content || 'No analysis available';
+            document.getElementById('analysisLoading').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
         window.onclick = function(event) {
             const modal = document.getElementById('resultModal');
             if (event.target === modal) {
                 closeModal();
             }
         }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // If there's a prediction result from form submission, show modal
+            {% if prediction is not none %}
+                currentPrediction = {{ prediction }};
+                {% if analysis %}
+                    currentAnalysis = `{{ analysis|safe }}`;
+                {% endif %}
+
+                setTimeout(() => {
+                    showModal();
+                    updatePredictionResult({{ prediction }});
+                    {% if analysis %}
+                        updateAnalysisContent(`{{ analysis|safe }}`);
+                    {% endif %}
+                }, 100);
+            {% endif %}
+        });
     </script>
 </body>
 </html>
