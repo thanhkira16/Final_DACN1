@@ -9,6 +9,7 @@ import traceback
 
 app = Flask(__name__)
 
+
 # Load models
 model_paths = {
     'KNN': 'model/knn_model.pkl',
@@ -124,18 +125,18 @@ if not load_processed_data():
         'total_no_churn': 1
     }
 
-# OpenAI ChatGPT API configuration
+# API configuration
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY') or "your-api-key-here"
 
-# Initialize OpenAI client with error handling
+# Initialize OpenAI client for churn prediction
 try:
     if OPENAI_API_KEY and OPENAI_API_KEY != "your-api-key-here":
-        client = OpenAI(api_key=OPENAI_API_KEY)
+        openai_client = OpenAI(api_key=OPENAI_API_KEY)
     else:
-        client = None
-        print("Warning: OPENAI_API_KEY not properly set. ChatGPT analysis will be disabled.")
+        openai_client = None
+        print("Warning: OPENAI_API_KEY not properly set. OpenAI churn prediction will be disabled.")
 except Exception as e:
-    client = None
+    openai_client = None
     print(f"Error initializing OpenAI client: {e}")
 
 
@@ -204,27 +205,65 @@ def get_test_data(dataset_type):
         return None, f"Error: {str(e)}"
 
 
-def analyze_with_chatgpt(input_data):
-    """Analyze user data with ChatGPT"""
-    if client is None:
-        return "Phân tích bằng ChatGPT đang bị tắt. Vui lòng thiết lập biến môi trường OPENAI_API_KEY."
+def predict_churn_with_openai(input_data):
+    """Predict churn using OpenAI API - returns 0 or 1"""
+    if openai_client is None:
+        return None, "OpenAI API chưa được cấu hình. Vui lòng thiết lập biến môi trường OPENAI_API_KEY."
 
     prompt = (
-            "Phân tích dữ liệu đầu vào sau đây của một người dùng ứng dụng ngân hàng số. "
-            "Đưa ra đánh giá bằng tiếng Việt về trạng thái hoạt động của người dùng này (ví dụ: đang hoạt động, không hoạt động, có nguy cơ rời bỏ), "
-            "kèm theo giải thích ngắn gọn dưới 200 từ. "
-            "Dữ liệu: " + str(input_data)
+        "Bạn là một chuyên gia phân tích dữ liệu ngân hàng. "
+        "Dựa vào dữ liệu khách hàng sau đây, hãy dự đoán khách hàng này có khả năng rời bỏ dịch vụ (churn) hay không. "
+        "Chỉ trả lời bằng số 0 (không churn) hoặc 1 (churn), không giải thích thêm.\n\n"
+        f"Dữ liệu khách hàng:\n{input_data}"
     )
 
     try:
-        response = client.chat.completions.create(
+        response = openai_client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=200
+            max_tokens=10,
+            temperature=0
+        )
+
+        result = response.choices[0].message.content.strip()
+        # Extract only the number (0 or 1)
+        if '1' in result:
+            return 1, None
+        elif '0' in result:
+            return 0, None
+        else:
+            return None, f"OpenAI trả về kết quả không hợp lệ: {result}"
+
+    except Exception as e:
+        return None, f"Lỗi khi gọi OpenAI API: {str(e)}"
+
+def analyze_with_openai(input_data):
+    """Phân tích dữ liệu người dùng bằng OpenAI GPT API"""
+    if openai_client is None:
+        return "Phân tích bằng OpenAI đang bị tắt. Vui lòng thiết lập biến môi trường OPENAI_API_KEY."
+
+    prompt = (
+        "Phân tích dữ liệu đầu vào sau đây của một người dùng ứng dụng ngân hàng số. "
+        "Đưa ra đánh giá bằng tiếng Việt về trạng thái hoạt động của người dùng này "
+        "(ví dụ: đang hoạt động tích cực, hoạt động bình thường, ít hoạt động, có nguy cơ rời bỏ), "
+        "kèm theo giải thích ngắn gọn về các yếu tố quan trọng và đề xuất hành động (nếu có). "
+        "Giới hạn phản hồi dưới 250 từ.\n\n"
+        f"Dữ liệu khách hàng:\n{str(input_data)}"
+    )
+
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "Bạn là một chuyên gia phân tích hành vi khách hàng."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=100
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"Lỗi khi phân tích bằng ChatGPT API: {str(e)}"
+        return f"Lỗi khi phân tích bằng OpenAI API: {str(e)}"
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -254,13 +293,27 @@ def index():
 
                 selected_model = request.form.get("model", "RandomForest")
 
-                # Make prediction
+                # Make prediction with selected model
                 input_df = pd.DataFrame([input_data])
                 model = models[selected_model]
-                prediction = int(model.predict(input_df)[0])
+                model_prediction = int(model.predict(input_df)[0])
 
-                # Call ChatGPT API for analysis
-                analysis = analyze_with_chatgpt(input_data)
+                # Get OpenAI churn prediction
+                openai_prediction, openai_error = predict_churn_with_openai(input_data)
+
+                # Determine final prediction (prioritize OpenAI if available)
+                if openai_prediction is not None:
+                    prediction = openai_prediction  # Use OpenAI result as final prediction
+                    if openai_prediction != model_prediction:
+                        print(
+                            f"Prediction difference - Model: {model_prediction}, OpenAI: {openai_prediction}, Using OpenAI")
+                else:
+                    prediction = model_prediction  # Use model result if OpenAI fails
+                    if openai_error:
+                        print(f"OpenAI prediction failed: {openai_error}")
+
+                # Get  analysis
+                analysis = analyze_with_openai(input_data)
 
         except Exception as e:
             print(f"Error in main route: {e}")
@@ -341,10 +394,22 @@ def predict_ajax():
             else:
                 input_data[feature] = 0.0
 
+        # Make prediction with selected model
         input_df = pd.DataFrame([input_data])
         model = models[model_name]
-        prediction = int(model.predict(input_df)[0])
-        analysis = analyze_with_chatgpt(input_data)
+        model_prediction = int(model.predict(input_df)[0])
+
+        # Get OpenAI churn prediction
+        openai_prediction, openai_error = predict_churn_with_openai(input_data)
+
+        # Determine final prediction (prioritize OpenAI if available)
+        if openai_prediction is not None:
+            prediction = openai_prediction  # Use OpenAI result as final prediction
+        else:
+            prediction = model_prediction  # Use model result if OpenAI fails
+
+        # Get Gemini analysis
+        analysis = analyze_with_openai(input_data)
 
         return jsonify({
             "prediction": prediction,
