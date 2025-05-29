@@ -53,6 +53,41 @@
             justify-content: space-between;
         }
 
+        /* Dataset selection buttons */
+        .dataset-selection {
+            margin: 15px 0;
+            text-align: center;
+        }
+        .dataset-selection h4 {
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 14px;
+        }
+        .dataset-btn {
+            width: 48%;
+            padding: 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .churn-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .churn-btn:hover {
+            background-color: #c82333;
+        }
+        .no-churn-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .no-churn-btn:hover {
+            background-color: #218838;
+        }
+
         /* Modal styles */
         .modal {
             display: none;
@@ -156,7 +191,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Analysis section styles - Updated with scrollable functionality */
+        /* Analysis section styles */
         .analysis-section {
             margin-top: 25px;
             padding: 20px;
@@ -255,6 +290,19 @@
             <button type="button" onclick="randomizeInputs()">Random Values</button>
         </div>
 
+        <!-- Dataset selection section -->
+        <div class="dataset-selection">
+            <h4>Load Test Data:</h4>
+            <div class="button-group">
+                <button type="button" class="dataset-btn churn-btn" onclick="loadChurnData()">
+                    Load CHURN User
+                </button>
+                <button type="button" class="dataset-btn no-churn-btn" onclick="loadNoChurnData()">
+                    Load NO_CHURN User
+                </button>
+            </div>
+        </div>
+
         <div style="margin-top: 10px; text-align: center;">
             <button type="button" style="width: 100%; background-color: #28a745;" onclick="submitWithRandom()">Random Input & Predict</button>
         </div>
@@ -310,6 +358,58 @@
         let currentFormData = {};
         let currentPrediction = null;
         let currentAnalysis = null;
+
+        async function loadChurnData() {
+            await loadTestData('CHURN');
+        }
+
+        async function loadNoChurnData() {
+            await loadTestData('NO_CHURN');
+        }
+
+        async function loadTestData(datasetType) {
+            try {
+                const response = await fetch('/load_test_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        dataset_type: datasetType
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    fillFormWithData(result.data);
+                    alert(result.message);
+                } else {
+                    alert('Error: ' + result.message);
+                }
+
+            } catch (error) {
+                alert('Error loading test data: ' + error.message);
+            }
+        }
+
+        function fillFormWithData(userData) {
+            // Fill form inputs directly using the feature names
+            for (const [fieldName, value] of Object.entries(userData)) {
+                const formElement = document.querySelector(`[name="${fieldName}"]`);
+                if (formElement) {
+                    if (formElement.tagName === 'SELECT') {
+                        formElement.value = value;
+                    } else {
+                        formElement.value = value;
+                    }
+                }
+            }
+        }
 
         function showPredictionResult(prediction, model) {
             const resultDiv = document.getElementById('predictionResult');
